@@ -1,0 +1,57 @@
+name: Main
+
+on:
+  workflow_dispatch:
+    inputs:
+      botocore_version:
+        description: "The version of botocore to serve a-la-carte"
+        type: string
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  botocore_version:
+    runs-on: ubuntu-latest
+    name: Determine Version
+    outputs:
+      botocore_version: ${{ steps.determiner.outputs.botocore_version }}
+    steps:
+      - id: determiner
+        name: Determine Version
+        run: |
+          BOTOCORE_VERSION="${{ inputs.botocore_version }}"
+          if [ -z "$BOTOCORE_VERSION" ]; then
+              BOTOCORE_VERSION=$(curl -s https://pypi.org/rss/project/botocore/releases.xml | yq -p=xml .rss.channel.item[0].title | tr -d \")
+
+              OUR_LATEST_RELEASE=$(curl -s https://pypi.org/rss/project/botocore-a-la-carte/releases.xml | yq -p=xml .rss.channel.item[0].title | tr -d \")
+              if [ "$OUR_LATEST_RELEASE" = "$BOTOCORE_VERSION" ]; then
+                BOTOCORE_VERSION=""
+              fi
+          fi
+          echo "botocore_version=$BOTOCORE_VERSION" >> $GITHUB_OUTPUT
+  main:
+    runs-on: ubuntu-latest
+    name: Build and Publish
+    needs: botocore_version
+    if: needs.botocore_version.outputs.botocore_version != ''
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+        with:
+          path: botocore-a-la-carte
+      - name: Checkout botocore
+        uses: actions/checkout@v3
+        with:
+          repository: boto/botocore
+          ref: ${{ needs.botocore_version.outputs.botocore_version }}
+          path: botocore
+      - name: Build And Publish Packages
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_REPOSITORY: https://pypi.org/
+          TWINE_REPOSITORY_URL: https://pypi.org/
+        run: |
+          pip install twine
+          cd botocore
+          python ../botocore-a-la-carte/main.py ${{ needs.botocore_version.outputs.botocore_version }} ../botocore-a-la-carte/README.rst
