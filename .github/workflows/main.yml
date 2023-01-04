@@ -49,8 +49,8 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-          TWINE_REPOSITORY: https://pypi.org/
-          TWINE_REPOSITORY_URL: https://pypi.org/
+          TWINE_REPOSITORY: https://upload.pypi.org/legacy/
+          TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
         run: |
           pip install twine
           cd botocore
