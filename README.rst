@@ -27,7 +27,7 @@ Example:
     >>> import botocore
     ...
 
-If you require specific service support, specify the service name as an extra:
+If you require specific service support, specify the service names as an extras:
 
 .. code-block:: console
 
