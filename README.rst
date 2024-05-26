@@ -39,3 +39,4 @@ If you require specific service support, specify the service names as an extras:
     >>> client = session.create_client('ec2')
     >>> print(client.describe_instances())
 
+
